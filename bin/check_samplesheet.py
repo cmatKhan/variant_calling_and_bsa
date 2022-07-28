@@ -5,9 +5,11 @@
 
 
 import argparse
+from ast import Assert
 import csv
 import logging
 import sys
+import os
 from collections import Counter
 from pathlib import Path
 
@@ -85,13 +87,33 @@ class RowChecker:
 
     def _validate_first(self, row):
         """Assert that the first FASTQ entry is non-empty and has the right format."""
-        assert len(row[self._first_col]) > 0, "At least the first FASTQ file is required."
-        self._validate_fastq_format(row[self._first_col])
+        if not len(row[self._first_col]) > 0:
+            raise AssertionError("At least the first FASTQ file is required.")
+        else:
+            try:
+                self._validate_fastq_format(row[self._first_col])
+            except AssertionError as e:
+                raise
+            # this is done in the subworkflow. Also in the subwork flow, handle
+            # the test case
+            # try:
+            #     self._validate_file_exists(row[self._first_col])
+            # except AssertionError as e:
+            #     raise
 
     def _validate_second(self, row):
         """Assert that the second FASTQ entry has the right format if it exists."""
         if len(row[self._second_col]) > 0:
-            self._validate_fastq_format(row[self._second_col])
+            try:
+                self._validate_fastq_format(row[self._second_col])
+            except AssertionError as e:
+                raise
+            # this is done in the subworkflow. Also in the subwork flow, handle
+            # the test case
+            # try:
+            #     self._validate_file_exists(row[self._second_col])
+            # except AssertionError as e:
+            #     raise
 
     def _validate_pair(self, row):
         """Assert that read pairs have the same file extension. Report pair status."""
@@ -108,6 +130,12 @@ class RowChecker:
         assert any(filename.endswith(extension) for extension in self.VALID_FORMATS), (
             f"The FASTQ file has an unrecognized extension: {filename}\n"
             f"It should be one of: {', '.join(self.VALID_FORMATS)}"
+        )
+
+    def _validate_file_exists(self, filename):
+        """Assert that a given filename, the file exists."""
+        assert os.path.exists(filename), (
+            f"The FASTQ file: {filename} does not exist. Check path."
         )
 
     def validate_unique_samples(self):
@@ -158,8 +186,9 @@ def sniff_format(handle):
     handle.seek(0)
     sniffer = csv.Sniffer()
     if not sniffer.has_header(peek):
-        logger.critical(f"The given sample sheet does not appear to contain a header.")
-        sys.exit(1)
+        logger.warning(f"The given sample sheet may not have a valid header.")
+        # note: do not
+        # sys.exit(1)
     dialect = sniffer.sniff(peek)
     return dialect
 

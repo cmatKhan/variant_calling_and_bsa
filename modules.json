@@ -3,14 +3,80 @@
     "homePage": "https://github.com/nf-core/mblabcallvariants",
     "repos": {
         "nf-core/modules": {
+            "bwamem2/index": {
+                "git_sha": "49b18b1639f4f7104187058866a8fab33332bdfe"
+            },
+            "bwamem2/mem": {
+                "git_sha": "4f5274c3de0c9521f5033893ff61057a74c45ba9"
+            },
+            "controlfreec/assesssignificance": {
+                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
+            },
+            "controlfreec/freec": {
+                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
+            },
+            "controlfreec/freec2bed": {
+                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
+            },
+            "controlfreec/freec2circos": {
+                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
+            },
+            "controlfreec/makegraph": {
+                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
+            },
             "custom/dumpsoftwareversions": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
             },
             "fastqc": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
             },
+            "freebayes": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "gatk4/intervallisttobed": {
+                "git_sha": "169b2b96c1167f89ab07127b7057c1d90a6996c7"
+            },
+            "gatk4/markduplicates": {
+                "git_sha": "df2620cfc7e4c21b14ed03c1c928f09fbabf83c4"
+            },
+            "gatk4/markduplicatesspark": {
+                "git_sha": "8e8f4c9c51a7b229dd45e9b287d48115c238baf3"
+            },
+            "gatk4/mergevcfs": {
+                "git_sha": "4199a05aeb0ec277d40cb112949bb85893310873"
+            },
+            "manta/somatic": {
+                "git_sha": "979e57b7ac6a405a395dd7a6dbe1a275c5bc226b"
+            },
             "multiqc": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "picard/addorreplacereadgroups": {
+                "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
+            },
+            "samtools/faidx": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/flagstat": {
+                "git_sha": "ecece498f10b47b7c9d06f53a310cea5811b4c5f"
+            },
+            "samtools/idxstats": {
+                "git_sha": "ecece498f10b47b7c9d06f53a310cea5811b4c5f"
+            },
+            "samtools/index": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/sort": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/stats": {
+                "git_sha": "f48a24770e24358e58de66e9b805a70d77cd154b"
+            },
+            "tabix/bgziptabix": {
+                "git_sha": "9dbaffff88013bc21460a989cde7a5aa172c2e0b"
+            },
+            "tiddit/sv": {
+                "git_sha": "b689b8ed88a9f89eb2f7c75d3eb0bace77ade109"
             }
         }
     }

@@ -1,3 +1,3 @@
 sample,fastq_1,fastq_2
-SAMPLE_PAIRED_END,/path/to/fastq/files/AEG588A1_S1_L002_R1_001.fastq.gz,/path/to/fastq/files/AEG588A1_S1_L002_R2_001.fastq.gz
-SAMPLE_SINGLE_END,/path/to/fastq/files/AEG588A4_S4_L003_R1_001.fastq.gz,
+A1-35-8,assets/test_data/A1-35-8_R1.fastq.gz,assets/test_data/A1-35-8_R2.fastq.gz
+A2-102-5,assets/test_data/A2-102-5_R1.fastq.gz,assets/test_data/A2-102-5_R2.fastq.gz

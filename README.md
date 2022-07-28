@@ -17,9 +17,25 @@
 
 ## Introduction
 
-<!-- TODO nf-core: Write a 1-2 sentence summary of what data the pipeline is for and what it does -->
+This re-implements Daniel's variant calling and BSA2 methods. \
+Currently, alignment is performed with `bwamem2`, which takes the place of \
+`ngm+yaha` in Daniel's current pipeline. A 'bake-off' \
+between the two alignment methods hasn't yet been performed. I am planning \
+to implement the `ngm+yaha` as an optional track once all of the steps from \
+alignment through BSA2 and QC reports are complete.
 
-**nf-core/mblabcallvariants** is a bioinformatics best-practice analysis pipeline for Variant calling for the mblab. Intended for use with cryptococcus.
+## Citation
+
+The processing steps and tool settings replicate Daniel's pipeline where \
+possible.
+
+Note that an enormous amount of this is copied directly from the \
+[sarek pipeline](https://nf-co.re/sarek). I have not done a good job at \
+attributing what is from sarek, what is modified, and what is written \
+specifically for this module. If not specified, please assume that the code \
+is either copied from sarek, or from the nf-core/modules.
+
+**Variant** **Calling** **and** **BSA2** is a bioinformatics analysis pipeline which calls and annotates variants, and optionally performs BSA2.
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
