@@ -4,41 +4,78 @@
 // in the include ... from ... path below
 //
 
-include { BWAMEM2_ALIGNER                                 } from "${projectDir}/subworkflows/nf-core/align/bwamem2/main"
-include { SAMTOOLS_SORT_INDEX_STATS                       } from "${projectDir}/subworkflows/nf-core/samtools/bam/sort_index_stats"
-include { PICARD_ADDORREPLACEREADGROUPS as ADD_READ_GROUP } from "${projectDir}/modules/nf-core/modules/picard/addorreplacereadgroups/main"
+include { BWAMEM2_ALIGNER               } from "${projectDir}/subworkflows/nf-core/align/bwamem2/main"
+include { NGM_YAHA                      } from "${projectDir}/subworkflows/nf-core/align/nextgenmap_yaha/main"
+include { SAMTOOLS_SORT_INDEX_STATS     } from "${projectDir}/subworkflows/nf-core/samtools/bam/sort_index_stats"
+include { PICARD_ADDORREPLACEREADGROUPS } from "${projectDir}/modules/nf-core/modules/picard/addorreplacereadgroups/main"
 
 workflow ALIGN {
     take:
+    aligners
     reads    // channel: [ val(meta), [ reads ] ]
-    fasta   // channel: file(ref_genome)
-    fasta_fai //channel: file(ref_genome) index
-    intervals_bed_combined        // channel: [optional]  intervals_bed
+    fasta    // channel: path(fasta)
+    fai
+    bwamem2_index
+    yaha_index
+    yaha_nib2
 
     main:
 
-    ch_versions = Channel.empty()
-    ch_reports  = Channel.empty()
-    ch_bam      = Channel.empty()
+    ch_versions    = Channel.empty()
+    ch_reports     = Channel.empty()
+    ch_bam         = Channel.empty()
 
-    if(params.aligner == 'bwamem2') {
+    def aligners_unrecognized = true
+
+    if(aligners && aligners.split(',').contains('bwamem2')) {
+        aligners_unrecognized = false
+
+        reads.map{meta, reads ->
+            def meta_tmp = augment_meta(meta, "bwamem2")
+                [meta_tmp,reads]}
+        .set{bwamem2_input}
+
         BWAMEM2_ALIGNER (
-            reads,
-            fasta
+            bwamem2_input,
+            bwamem2_index
         )
         ch_bam      = ch_bam.mix(BWAMEM2_ALIGNER.out.bam)
+        // ch_bam.view()
         ch_versions = ch_versions.mix(BWAMEM2_ALIGNER.out.versions)
-    } else {
-        exit 1, "No aligner specified in params OR aligner: ${params.aligner} is not recognized. "
     }
 
-    ADD_READ_GROUP(
+    if(aligners && aligners.split(',').contains('ngm_yaha')){
+        aligners_unrecognized = false
+
+        reads.map{meta, reads ->
+            def meta_tmp = augment_meta(meta, "ngm_yaha")
+                [meta_tmp,reads]}
+        .set{ngm_yaha_input}
+
+        NGM_YAHA (
+            ngm_yaha_input,
+            fasta,
+            fai,
+            yaha_index,
+            yaha_nib2
+        )
+        ch_bam      = ch_bam.mix(NGM_YAHA.out.bam)
+        ch_versions = ch_versions.mix(NGM_YAHA.out.versions)
+    }
+
+    // if no aligner block is run, then exit with error
+    if(aligners_unrecognized){
+        exit 1, "Either no aligners were specified, or no specified aligner " +
+        "is recognized. Aligners in list: ${aligners.split(',')}."
+    }
+
+    PICARD_ADDORREPLACEREADGROUPS(
         ch_bam
     )
-    ch_versions = ch_versions.mix(ADD_READ_GROUP.out.versions)
+    ch_versions = ch_versions.mix(PICARD_ADDORREPLACEREADGROUPS.out.versions)
 
     SAMTOOLS_SORT_INDEX_STATS(
-        ADD_READ_GROUP.out.bam
+        PICARD_ADDORREPLACEREADGROUPS.out.bam
     )
 
     // Gather QC reports
@@ -49,9 +86,22 @@ workflow ALIGN {
     // Gather used softwares versions
     ch_versions = ch_versions.mix(SAMTOOLS_SORT_INDEX_STATS.out.versions)
 
-
     emit:
-    bam_bai   = SAMTOOLS_SORT_INDEX_STATS.out.bam_index // channel: [ val(meta), [ bam ], [ bai ] ]
+    // channel: [ val(meta), [ bam ], [ bai ] ]
+    // meta includes aligner: <aligner>, eg aligner: bwamem2
+    bam_bai   = SAMTOOLS_SORT_INDEX_STATS.out.bam_index
     report    = ch_reports                              // qc reports
     versions  = ch_versions                             // channel: [ versions.yml ]
+}
+
+def augment_meta(Map meta, aligner) {
+
+    def new_meta = [:]
+
+    meta.each{ k,v ->
+        new_meta[k] = v}
+
+    new_meta["aligner"] = aligner
+
+    return new_meta
 }

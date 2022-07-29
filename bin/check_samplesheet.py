@@ -3,7 +3,6 @@
 
 """Provide a command line tool to validate and transform tabular samplesheets."""
 
-
 import argparse
 from ast import Assert
 import csv
@@ -13,9 +12,7 @@ import os
 from collections import Counter
 from pathlib import Path
 
-
 logger = logging.getLogger()
-
 
 class RowChecker:
     """
@@ -35,8 +32,15 @@ class RowChecker:
     def __init__(
         self,
         sample_col="sample",
-        first_col="fastq_1",
-        second_col="fastq_2",
+        group="group",
+        pool="pool",
+        cond="cond",
+        day="day",
+        replicate="replicate",
+        experiment="experiment",
+        runNumber="runNumber",
+        fastq_1="fastq_1",
+        fastq_2="fastq_2",
         single_col="single_end",
         **kwargs,
     ):
@@ -46,9 +50,9 @@ class RowChecker:
         Args:
             sample_col (str): The name of the column that contains the sample name
                 (default "sample").
-            first_col (str): The name of the column that contains the first (or only)
+            fastq_1 (str): The name of the column that contains the first (or only)
                 FASTQ file path (default "fastq_1").
-            second_col (str): The name of the column that contains the second (if any)
+            fastq_2 (str): The name of the column that contains the second (if any)
                 FASTQ file path (default "fastq_2").
             single_col (str): The name of the new column that will be inserted and
                 records whether the sample contains single- or paired-end sequencing
@@ -57,8 +61,15 @@ class RowChecker:
         """
         super().__init__(**kwargs)
         self._sample_col = sample_col
-        self._first_col = first_col
-        self._second_col = second_col
+        self._group = group
+        self._pool = pool
+        self._cond = cond
+        self._day = day
+        self._replicate = replicate
+        self._experiment = experiment
+        self._runNumber = runNumber
+        self._fastq_1 = fastq_1
+        self._fastq_2 = fastq_2
         self._single_col = single_col
         self._seen = set()
         self.modified = []
@@ -76,7 +87,7 @@ class RowChecker:
         self._validate_first(row)
         self._validate_second(row)
         self._validate_pair(row)
-        self._seen.add((row[self._sample_col], row[self._first_col]))
+        self._seen.add((row[self._sample_col], row[self._fastq_1]))
         self.modified.append(row)
 
     def _validate_sample(self, row):
@@ -87,40 +98,40 @@ class RowChecker:
 
     def _validate_first(self, row):
         """Assert that the first FASTQ entry is non-empty and has the right format."""
-        if not len(row[self._first_col]) > 0:
+        if not len(row[self._fastq_1]) > 0:
             raise AssertionError("At least the first FASTQ file is required.")
         else:
             try:
-                self._validate_fastq_format(row[self._first_col])
+                self._validate_fastq_format(row[self._fastq_1])
             except AssertionError as e:
                 raise
             # this is done in the subworkflow. Also in the subwork flow, handle
             # the test case
             # try:
-            #     self._validate_file_exists(row[self._first_col])
+            #     self._validate_file_exists(row[self._fastq_1])
             # except AssertionError as e:
             #     raise
 
     def _validate_second(self, row):
         """Assert that the second FASTQ entry has the right format if it exists."""
-        if len(row[self._second_col]) > 0:
+        if len(row[self._fastq_2]) > 0:
             try:
-                self._validate_fastq_format(row[self._second_col])
+                self._validate_fastq_format(row[self._fastq_2])
             except AssertionError as e:
                 raise
             # this is done in the subworkflow. Also in the subwork flow, handle
             # the test case
             # try:
-            #     self._validate_file_exists(row[self._second_col])
+            #     self._validate_file_exists(row[self._fastq_2])
             # except AssertionError as e:
             #     raise
 
     def _validate_pair(self, row):
         """Assert that read pairs have the same file extension. Report pair status."""
-        if row[self._first_col] and row[self._second_col]:
+        if row[self._fastq_1] and row[self._fastq_2]:
             row[self._single_col] = False
             assert (
-                Path(row[self._first_col]).suffixes[-2:] == Path(row[self._second_col]).suffixes[-2:]
+                Path(row[self._fastq_1]).suffixes[-2:] == Path(row[self._fastq_2]).suffixes[-2:]
             ), "FASTQ pairs must have the same file extensions."
         else:
             row[self._single_col] = True

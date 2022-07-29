@@ -14,7 +14,7 @@ include { TABIX_BGZIPTABIX as TABIX_BGZIPTABIX_INTERVAL_SPLIT } from "${projectD
 
 workflow PREPARE_INTERVALS {
     take:
-        fasta_fai // channel: [mandatory] fasta_fai
+        fasta_fai // channel: [ val(meta), path(fasta_index)]
 
     main:
 
@@ -43,7 +43,7 @@ workflow PREPARE_INTERVALS {
         //If no interval/target file is provided, then intervals are generated from FASTA file
         if (!params.intervals) {
 
-            BUILD_INTERVALS(fasta_fai.map{it -> [[id:it.baseName], it]})
+            BUILD_INTERVALS(fasta_fai.map{meta,it -> [[id:it.baseName], it]})
 
             ch_intervals_combined = BUILD_INTERVALS.out.bed
 

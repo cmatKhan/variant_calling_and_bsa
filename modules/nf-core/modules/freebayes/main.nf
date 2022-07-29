@@ -30,7 +30,7 @@ process FREEBAYES {
     def samples_file     = samples        ? "--samples ${samples}"         : ""
     def populations_file = populations    ? "--populations ${populations}" : ""
     def cnv_file         = cnv            ? "--cnv-map ${cnv}"             : ""
-
+    
     if (task.cpus > 1) {
         """
         freebayes-parallel \\

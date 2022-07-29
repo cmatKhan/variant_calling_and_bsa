@@ -10,7 +10,7 @@ process BUILD_INTERVALS {
     tuple val(meta), path(fasta_fai)
 
     output:
-    tuple val(meta), path("${fasta_fai.baseName}.bed") , emit: bed
+    tuple val(meta), path("*.bed") , emit: bed
     path "versions.yml"                                , emit: versions
 
     when:

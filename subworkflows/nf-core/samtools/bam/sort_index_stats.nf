@@ -3,10 +3,10 @@
 // COPIED FROM nf-co/rnaseq
 //
 
-include { SAMTOOLS_SORT                          } from "${projectDir}/modules/nf-core/modules/samtools/sort/main"
-include { SAMTOOLS_INDEX                         } from "${projectDir}/modules/nf-core/modules/samtools/index/main"
-include { SAMTOOLS_BAM_STATS                     } from "${projectDir}/subworkflows/nf-core/samtools/bam/bam_stats.nf"
-include { GATK4_MARKDUPLICATES as MARKDUPLICATES } from "${projectDir}/modules/nf-core/modules/gatk4/markduplicates/main"
+include { SAMTOOLS_SORT         } from "${projectDir}/modules/nf-core/modules/samtools/sort/main"
+include { SAMTOOLS_INDEX        } from "${projectDir}/modules/nf-core/modules/samtools/index/main"
+include { SAMTOOLS_BAM_STATS    } from "${projectDir}/subworkflows/nf-core/samtools/bam/bam_stats"
+include { PICARD_MARKDUPLICATES } from "${projectDir}/modules/nf-core/modules/picard/markduplicates/main"
 
 workflow SAMTOOLS_SORT_INDEX_STATS {
     take:
@@ -19,15 +19,15 @@ workflow SAMTOOLS_SORT_INDEX_STATS {
     SAMTOOLS_SORT ( bam )
     ch_versions = ch_versions.mix(SAMTOOLS_SORT.out.versions.first())
 
-    MARKDUPLICATES(
+    PICARD_MARKDUPLICATES(
         SAMTOOLS_SORT.out.bam
     )
-    ch_versions = ch_versions.mix(MARKDUPLICATES.out.versions.first())
+    ch_versions = ch_versions.mix(PICARD_MARKDUPLICATES.out.versions.first())
 
-    SAMTOOLS_INDEX ( MARKDUPLICATES.out.bam )
+    SAMTOOLS_INDEX ( PICARD_MARKDUPLICATES.out.bam )
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions.first())
 
-    MARKDUPLICATES.out.bam
+    PICARD_MARKDUPLICATES.out.bam
         .join(SAMTOOLS_INDEX.out.bai, by: [0], remainder: true)
         .join(SAMTOOLS_INDEX.out.csi, by: [0], remainder: true)
         .map {
@@ -45,7 +45,7 @@ workflow SAMTOOLS_SORT_INDEX_STATS {
 
     emit:
     bam_index  = ch_sorted_bam_index             // channel: [ val(meta), path(bam), path(bai) ]
-    mark_dups_report = MARKDUPLICATES.out.metrics // channel: mark dups report
+    mark_dups_report = PICARD_MARKDUPLICATES.out.metrics // channel: mark dups report
     stats      = SAMTOOLS_BAM_STATS.out.stats    // channel: [ val(meta), [ stats ] ]
     flagstat   = SAMTOOLS_BAM_STATS.out.flagstat // channel: [ val(meta), [ flagstat ] ]
     idxstats   = SAMTOOLS_BAM_STATS.out.idxstats // channel: [ val(meta), [ idxstats ] ]

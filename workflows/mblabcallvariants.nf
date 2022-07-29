@@ -47,9 +47,11 @@ ch_multiqc_custom_config = params.multiqc_config ?
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { INPUT_CHECK              } from "${projectDir}/subworkflows/local/input_check"
+include { INDEX_GENOME             } from "${projectDir}/subworkflows/local/index_genome"
 include { PREPARE_INTERVALS        } from "${projectDir}/subworkflows/local/prepare_intervals"
 include { ALIGN                    } from "${projectDir}/subworkflows/local/align"
 include { CALL_INDIVIDUAL_VARIANTS } from "${projectDir}/subworkflows/local/call_individual_variants"
+include { CALL_BATCH_VARIANTS } from "${projectDir}/subworkflows/local/call_batch_variants"
 include { ANNOTATE                 } from "${projectDir}/subworkflows/local/annotate_individual_variants"
 include { BSA2                     } from "${projectDir}/subworkflows/local/bsa2"
 
@@ -69,9 +71,6 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from "${projectDir}/modules/nf-core/modu
 fasta     = params.fasta     ?
             Channel.fromPath(params.fasta).collect()     :
             Channel.empty()
-fasta_fai = params.fasta_fai ?
-            Channel.fromPath(params.fasta_fai).collect() :
-            Channel.empty()
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,6 +88,8 @@ workflow MBLABCALLVARIANTS {
     // store reports that will be consumed by multiQC
     ch_reports              = Channel.empty()
 
+    annotate_variants_input = Channel.empty()
+
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
@@ -96,6 +97,12 @@ workflow MBLABCALLVARIANTS {
         ch_input
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
+
+    INDEX_GENOME (
+        params.aligners,
+        fasta
+    )
+    ch_versions = ch_versions.mix(INDEX_GENOME.out.versions.first())
 
     //
     // MODULE: Run FastQC
@@ -108,38 +115,62 @@ workflow MBLABCALLVARIANTS {
 
     // Build intervals if needed
     PREPARE_INTERVALS(
-        fasta_fai
+        INDEX_GENOME.out.fai
     )
-    ch_versions = ch_versions.mix(PREPARE_INTERVALS.out.versions.first())
+    ch_versions             = ch_versions.mix(PREPARE_INTERVALS.out.versions.first())
     ch_intervals            = PREPARE_INTERVALS.out.intervals_bed
     ch_intervals_bed_gz_tbi = PREPARE_INTERVALS.out.intervals_bed_gz_tbi
     ch_intervals_combined   = PREPARE_INTERVALS.out.intervals_bed_combined
 
     ALIGN (
+        params.aligners,
         INPUT_CHECK.out.reads,
         fasta,
-        fasta_fai,
-        ch_intervals_combined
+        INDEX_GENOME.out.fai,
+        INDEX_GENOME.out.bwamem2_index,
+        INDEX_GENOME.out.yaha_index,
+        INDEX_GENOME.out.yaha_nib2
     )
     ch_reports  = ch_reports.mix(ALIGN.out.report)
     ch_versions = ch_versions.mix(ALIGN.out.versions.first())
 
-    // CALL_INDIVIDUAL_VARIANTS (
-    //     ALIGN.out.bam_bai,
-    //     fasta,
-    //     fasta_fai,
-    //     [], // bwa index for tiddit not used
-    //     ch_intervals,
-    //     ch_intervals_bed_gz_tbi,
-    //     ch_intervals_combined
-    // )
-    // ch_versions = ch_versions.mix(CALL_INDIVIDUAL_VARIANTS.out.versions.first())
+    CALL_INDIVIDUAL_VARIANTS (
+        ALIGN.out.bam_bai,
+        fasta,
+        INDEX_GENOME.out.fai,
+        ch_intervals_combined
+    )
+    ch_versions = ch_versions.mix(CALL_INDIVIDUAL_VARIANTS.out.versions.first())
 
-    // ANNOTATE (
-    //     CALL_INDIVIDUAL_VARIANTS.out.freebayes_vcf
-    // )
-    // ch_reports  = ch_reports.mix(ANNOATE.out.reports)
-    // ch_versions = ch_versions.mix(ANNOTATE.out.versions.first())
+    annotate_variants_input = annotate_variants_input.mix(CALL_INDIVIDUAL_VARIANTS.out.freebayes_vcf)
+
+    ALIGN.out.bam_bai.map{meta, bam, bai ->
+        return [meta.group, meta.aligner, bam, bai]}
+        .groupTuple(by: [0,1])
+        .map{group, aligner, bam_list, bai_list ->
+            def meta_tmp = ["id":"group_"+group, "aligner":aligner]
+            if(bam_list.size() > 1){
+               return [meta_tmp,bam_list,bai_list]
+            }
+        }
+        .combine(ch_intervals_combined)
+        .set{ call_batch_variants_input }
+
+    CALL_BATCH_VARIANTS (
+        call_batch_variants_input,
+        fasta,
+        INDEX_GENOME.out.fai
+    )
+    ch_versions = ch_versions.mix(CALL_BATCH_VARIANTS.out.versions.first())
+
+    annotate_variants_input = annotate_variants_input.mix(CALL_BATCH_VARIANTS.out.freebayes_vcf)
+
+    ANNOTATE (
+        annotate_variants_input,
+        fasta
+    )
+    ch_reports  = ch_reports.mix(ANNOTATE.out.reports)
+    ch_versions = ch_versions.mix(ANNOTATE.out.versions.first())
 
     // if(params.bsa2){
     //     BSA2 (

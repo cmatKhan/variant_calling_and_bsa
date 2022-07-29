@@ -1,3 +1,4 @@
-sample,fastq_1,fastq_2
-A1-35-8,assets/test_data/A1-35-8_R1.fastq.gz,assets/test_data/A1-35-8_R2.fastq.gz
-A2-102-5,assets/test_data/A2-102-5_R1.fastq.gz,assets/test_data/A2-102-5_R2.fastq.gz
+sample,group,pool,cond,day,replicate,experiment,runNumber,fastq_1,fastq_2
+A1-35-8,1,A1,lung,8,1,BSA2,5000,assets/test_data/A1-35-8_R1.fastq.gz,assets/test_data/A1-35-8_R2.fastq.gz
+A2-102-5,1,A2,inoculum,15,2,BSA2,5000,assets/test_data/A2-102-5_R1.fastq.gz,assets/test_data/A2-102-5_R2.fastq.gz
+A5-35-17,2,A5,brain,0,1,BSA2,5000,assets/test_data/A5-35-17_R1.fastq.gz,assets/test_data/A5-35-17_R2.fastq.gz

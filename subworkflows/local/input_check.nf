@@ -25,6 +25,14 @@ def create_fastq_channel(LinkedHashMap row) {
     // create meta map
     def meta = [:]
     meta.id         = row.sample.replace("-", "_")
+    meta.group      = row.group.replace("-","_")
+    meta.group      = meta.group.replace("\s+", "_")
+    meta.pool       = row.pool.replace("-", "_")
+    meta.cond       = row.cond.replace("-", "_")
+    meta.day        = row.day.replace("-", "_")
+    meta.replicate  = row.replicate.replace("-", "_")
+    meta.experiment = row.experiment.replace("-", "_")
+    meta.runNumber  = row.runNumber.replace("-", "_")
     meta.single_end = row.single_end.toBoolean()
 
     def fastq_1 = file(row.fastq_1).exists() ?

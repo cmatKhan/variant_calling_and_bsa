@@ -9,6 +9,8 @@ process SNPEFF {
 
     input:
     tuple val(meta), path(vcf)
+    path(config_file)
+    path(db)
 
     output:
     tuple val(meta), path("*.ann.vcf"), emit: vcf
@@ -32,6 +34,8 @@ process SNPEFF {
     """
     snpEff \\
         -Xmx${avail_mem}g \\
+        -dataDir ${db} \\
+        -c ${config_file} \\
         $args \\
         -csvStats ${prefix}.csv \\
         $vcf \\

@@ -1,43 +1,137 @@
 # ![nf-core/mblabcallvariants](docs/images/nf-core-mblabcallvariants_logo_light.png#gh-light-mode-only) ![nf-core/mblabcallvariants](docs/images/nf-core-mblabcallvariants_logo_dark.png#gh-dark-mode-only)
 
-[![GitHub Actions CI Status](https://github.com/nf-core/mblabcallvariants/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/mblabcallvariants/actions?query=workflow%3A%22nf-core+CI%22)
-[![GitHub Actions Linting Status](https://github.com/nf-core/mblabcallvariants/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/mblabcallvariants/actions?query=workflow%3A%22nf-core+linting%22)
-[![AWS CI](https://img.shields.io/badge/CI%20tests-full%20size-FF9900?logo=Amazon%20AWS)](https://nf-co.re/mblabcallvariants/results)
 [![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8)](https://doi.org/10.5281/zenodo.XXXXXXX)
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.10.3-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg)](https://sylabs.io/docs/)
-[![Launch on Nextflow Tower](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Nextflow%20Tower-%234256e7)](https://tower.nf/launch?pipeline=https://github.com/nf-core/mblabcallvariants)
 
-[![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23mblabcallvariants-4A154B?logo=slack)](https://nfcore.slack.com/channels/mblabcallvariants)
-[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?logo=twitter)](https://twitter.com/nf_core)
-[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?logo=youtube)](https://www.youtube.com/c/nf-core)
+[![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23mblabcallvariants-4A154B?logo=slack)](https://brentlab.slack.com/channels/varient_calling_pipeline)
 
 ## Introduction
 
-This re-implements Daniel's variant calling and BSA2 methods. \
-Currently, alignment is performed with `bwamem2`, which takes the place of \
-`ngm+yaha` in Daniel's current pipeline. A 'bake-off' \
-between the two alignment methods hasn't yet been performed. I am planning \
-to implement the `ngm+yaha` as an optional track once all of the steps from \
-alignment through BSA2 and QC reports are complete.
+This pipeline is meant to align genomic reads and perform variant calling against
+the reference genome. Given a certain formulation of the input samplesheet, it
+will perform the variant calling step (currently using freebayes) individually
+on each of the samples, and then again using a user supplied grouping. Therefore,
+it is appropriate for both checking a genotype, eg that a certain KO was successful,
+and also a BSA experiment.
+
+## Installation on HTCF
+
+This only needs to be performed one time by one person in a given lab.
+
+On HTCF:
+
+```bash
+# launch an interactive session
+$ interactive
+
+# install java jdk, nextflow, singularity and git via spack
+$ spack install openjdk
+
+$ spack install nextflow
+
+$ spack install singularityce
+
+$ spack install git
+
+# change directory into the lab's shared software space. note <lab>
+# is a placeholder -- you need to know what your lab group is on htcf and replace
+# <lab> with that
+$ cd /ref/<lab>/software
+
+$ eval $(spack load --sh git)
+
+# clone the repository from github into /ref/<lab>/software
+$ git clone https://github.com/cmatKhan/variant_calling_and_bsa
+
+# change directory back into scratch
+$ cd /scratch/<lab>/<user_scratch>
+
+```
+
+## Maintenance
+
+Before using the pipeline, you should make sure that you have the most up-to-date
+version. To update, do this on HTCF:
+
+```bash
+# change directory into the source code directory in your lab's shared software
+# space
+$ cd /ref/<lab>/software/variant_calling_and_bsa
+
+# load the spack git module
+$ eval $(spack load --sh git)
+
+# pull any changes from the github repo to your local
+$ git pull
+
+```
+
+## Test the installation
+
+To test whether the pipeline is appropriately installed, do the following:
+
+```bash
+# make sure that you're in scratch. Make sure you fill in the <stuff> with
+# the correct information. For instance, if I were to do this to my own
+# scratch directory, I would do this:
+# cd /scratch/mblab/chasem
+$ cd /scratch/<lab>/<your_scratch_directory>
+
+# make a directory to store the input/output of the pipeline. It does not
+# matter what this is called -- only you need to understand
+$ mkdir variant_calling_pipeline
+
+# change directory into the directory you just created. Remember
+# that the name of this directory doesn't matter -- call it whatever
+# you like
+$ cd variant_calling_pipeline
+
+# copy the HTCF run script to your directory
+$ cp /ref/<lab>/software/variant_calling_and_bsa/assets/run_nf_htcf.sh .
+
+# make sure that worked. The result of this command should show that
+# run_nf_htcf.sh is in your current directory.
+$ ls
+
+# launch the test
+$ sbatch run_nf_htcf.sh
+
+```
+
+This will run the pre-configured test data via slurm. You can monitor progress
+by using `squeue -u $USER`. Once the jobs start to get scheduled, there will be
+a file created in your current directory called `variant_calling_test.out`. You
+can watch progress of the pipeline by entering `tail -150 variant_calling_test.out`.
+That file is updated as data moves through the pipeline. It will also record
+any errors. It should, however, track the data as it moves through. Once all jobs
+are complete, that file will display a 'successful completion' message. Throughout
+the workflow, intermediate files are deposited in a subdirectory of your current
+directory called `work`, and the final results are deposited in a directory called
+`results`. Do not delete either of these until you the pipeline has completely
+finished (either due to completion or error. If it is finished, there will be
+no pipeline jobs in your `squeue -u $USER` output related to the pipeline).
 
 ## Citation
 
-The processing steps and tool settings replicate Daniel's pipeline where \
-possible.
+Coming soon -- need to cite daniel's paper
 
-Note that an enormous amount of this is copied directly from the \
-[sarek pipeline](https://nf-co.re/sarek). I have not done a good job at \
-attributing what is from sarek, what is modified, and what is written \
-specifically for this module. If not specified, please assume that the code \
-is either copied from sarek, or from the nf-core/modules.
+## Developer Notes
 
-**Variant** **Calling** **and** **BSA2** is a bioinformatics analysis pipeline which calls and annotates variants, and optionally performs BSA2.
+The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
+to run tasks across multiple compute infrastructures in a very portable manner.
+It uses Docker/Singularity containers making installation trivial and results
+highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html)
+implementation of this pipeline uses one container per process which makes it
+much easier to maintain and update software dependencies. Where possible,
+these processes have been submitted to and installed from
+[nf-core/modules](https://github.com/nf-core/modules) in order to make them
+available to all nf-core pipelines, and to everyone within the Nextflow community!
 
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
+## EVERYTING BELOW IS TEMPLATE
 
 <!-- TODO nf-core: Add full-sized test dataset and amend the paragraph below if applicable -->
 

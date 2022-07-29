@@ -21,7 +21,6 @@ process PICARD_ADDORREPLACEREADGROUPS {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    println args
     def avail_mem = 3
     if (!task.memory) {
         log.info '[Picard AddOrReplaceReadGroups] Available memory not known '+

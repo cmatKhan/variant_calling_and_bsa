@@ -9,20 +9,8 @@
             "bwamem2/mem": {
                 "git_sha": "4f5274c3de0c9521f5033893ff61057a74c45ba9"
             },
-            "controlfreec/assesssignificance": {
-                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
-            },
-            "controlfreec/freec": {
-                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
-            },
-            "controlfreec/freec2bed": {
-                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
-            },
-            "controlfreec/freec2circos": {
-                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
-            },
-            "controlfreec/makegraph": {
-                "git_sha": "9ae34a01d1747019fd37753ff4cafb05aec35a2b"
+            "cat/fastq": {
+                "git_sha": "9aadd9a6d3f5964476582319b3a1c54a3e3fe7c9"
             },
             "custom/dumpsoftwareversions": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
@@ -45,16 +33,28 @@
             "gatk4/mergevcfs": {
                 "git_sha": "4199a05aeb0ec277d40cb112949bb85893310873"
             },
-            "manta/somatic": {
-                "git_sha": "979e57b7ac6a405a395dd7a6dbe1a275c5bc226b"
+            "gunzip": {
+                "git_sha": "fa37e0662690c4ec4260dae282fbce08777503e6"
             },
             "multiqc": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
             },
+            "pear": {
+                "git_sha": "9bda3dc7f0dd1c0607eeb134fb6e4c9f2d1c5ca7"
+            },
             "picard/addorreplacereadgroups": {
                 "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
             },
+            "picard/markduplicates": {
+                "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
+            },
+            "picard/sortvcf": {
+                "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
+            },
             "samtools/faidx": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/fastq": {
                 "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
             },
             "samtools/flagstat": {
@@ -66,11 +66,17 @@
             "samtools/index": {
                 "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
             },
+            "samtools/merge": {
+                "git_sha": "720027275ccdc1363bb2a19c6412da148e31d94b"
+            },
             "samtools/sort": {
                 "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
             },
             "samtools/stats": {
                 "git_sha": "f48a24770e24358e58de66e9b805a70d77cd154b"
+            },
+            "samtools/view": {
+                "git_sha": "6b64f9cb6c3dd3577931cc3cd032d6fb730000ce"
             },
             "tabix/bgziptabix": {
                 "git_sha": "9dbaffff88013bc21460a989cde7a5aa172c2e0b"
