@@ -3,6 +3,9 @@
     "homePage": "https://github.com/nf-core/mblabcallvariants",
     "repos": {
         "nf-core/modules": {
+            "bwa/index": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
             "bwamem2/index": {
                 "git_sha": "49b18b1639f4f7104187058866a8fab33332bdfe"
             },
@@ -20,6 +23,9 @@
             },
             "freebayes": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "gatk4/createsequencedictionary": {
+                "git_sha": "169b2b96c1167f89ab07127b7057c1d90a6996c7"
             },
             "gatk4/intervallisttobed": {
                 "git_sha": "169b2b96c1167f89ab07127b7057c1d90a6996c7"
@@ -83,6 +89,9 @@
             },
             "tiddit/sv": {
                 "git_sha": "b689b8ed88a9f89eb2f7c75d3eb0bace77ade109"
+            },
+            "vcftools": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
             }
         }
     }
