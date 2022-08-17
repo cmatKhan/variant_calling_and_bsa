@@ -1,0 +1,4 @@
+sample,group,pool,cond,day,replicate,experiment,runNumber,fastq_1,fastq_2
+sample1,1,1,1,1,1,genotype_check,5000,assets/test_data/A1-35-8_R1.fastq.gz,assets/test_data/A1-35-8_R2.fastq.gz
+sample2,1,1,1,1,1,genotype_check,5000,assets/test_data/A2-102-5_R1.fastq.gz,assets/test_data/A2-102-5_R2.fastq.gz
+sample3,1,1,1,1,1,genotype_check,5000,assets/test_data/A5-35-17_R1.fastq.gz,assets/test_data/A5-35-17_R2.fastq.gz

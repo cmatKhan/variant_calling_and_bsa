@@ -40,7 +40,6 @@ workflow ALIGN {
             bwamem2_index
         )
         ch_bam      = ch_bam.mix(BWAMEM2_ALIGNER.out.bam)
-        // ch_bam.view()
         ch_versions = ch_versions.mix(BWAMEM2_ALIGNER.out.versions)
     }
 

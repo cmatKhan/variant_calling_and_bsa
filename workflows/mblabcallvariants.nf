@@ -11,7 +11,7 @@ WorkflowMblabcallvariants.initialise(params, log)
 
 // TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.input, params.multiqc_config, params.fasta ]
+def checkPathParamList = [ params.input, params.multiqc_config, params.fasta, params.dusted_bed ]
 for (param in checkPathParamList) {
     if (param) {
         file(param, checkIfExists: true)
@@ -47,10 +47,11 @@ ch_multiqc_custom_config = params.multiqc_config ?
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { INPUT_CHECK              } from "${projectDir}/subworkflows/local/input_check"
-include { INDEX_GENOME             } from "${projectDir}/subworkflows/local/index_genome"
+include { PREPARE_GENOME             } from "${projectDir}/subworkflows/local/prepare_genome"
 include { PREPARE_INTERVALS        } from "${projectDir}/subworkflows/local/prepare_intervals"
 include { ALIGN                    } from "${projectDir}/subworkflows/local/align"
 include { CALL_INDIVIDUAL_VARIANTS } from "${projectDir}/subworkflows/local/call_individual_variants"
+include { CALL_STRUCTURAL_VARIANTS } from "${projectDir}/subworkflows/local/call_structural_variants"
 include { CALL_BATCH_VARIANTS } from "${projectDir}/subworkflows/local/call_batch_variants"
 include { ANNOTATE                 } from "${projectDir}/subworkflows/local/annotate_individual_variants"
 include { BSA2                     } from "${projectDir}/subworkflows/local/bsa2"
@@ -90,6 +91,10 @@ workflow MBLABCALLVARIANTS {
 
     annotate_variants_input = Channel.empty()
 
+    ch_dusted_bed           = params.dusted_bed ?
+                              Channel.fromPath(params.dusted_bed).collect() :
+                              Channel.empty()
+
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
@@ -98,11 +103,11 @@ workflow MBLABCALLVARIANTS {
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
-    INDEX_GENOME (
+    PREPARE_GENOME (
         params.aligners,
         fasta
     )
-    ch_versions = ch_versions.mix(INDEX_GENOME.out.versions.first())
+    ch_versions = ch_versions.mix(PREPARE_GENOME.out.versions.first())
 
     //
     // MODULE: Run FastQC
@@ -114,57 +119,102 @@ workflow MBLABCALLVARIANTS {
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
     // Build intervals if needed
+    // note that this comes directory from nf-core/sarek. output is just
+    // a bed file of the chr in the fasta. It is input to the variant calling
+    // and variant annotation steps
     PREPARE_INTERVALS(
-        INDEX_GENOME.out.fai
+        PREPARE_GENOME.out.fai
     )
     ch_versions             = ch_versions.mix(PREPARE_INTERVALS.out.versions.first())
     ch_intervals            = PREPARE_INTERVALS.out.intervals_bed
     ch_intervals_bed_gz_tbi = PREPARE_INTERVALS.out.intervals_bed_gz_tbi
     ch_intervals_combined   = PREPARE_INTERVALS.out.intervals_bed_combined
 
+    // Align the reads
     ALIGN (
         params.aligners,
         INPUT_CHECK.out.reads,
         fasta,
-        INDEX_GENOME.out.fai,
-        INDEX_GENOME.out.bwamem2_index,
-        INDEX_GENOME.out.yaha_index,
-        INDEX_GENOME.out.yaha_nib2
+        PREPARE_GENOME.out.fai,
+        PREPARE_GENOME.out.bwamem2_index,
+        PREPARE_GENOME.out.yaha_index,
+        PREPARE_GENOME.out.yaha_nib2
     )
     ch_reports  = ch_reports.mix(ALIGN.out.report)
     ch_versions = ch_versions.mix(ALIGN.out.versions.first())
 
-    CALL_INDIVIDUAL_VARIANTS (
+    // Create VCF files -- note this is on individual alignment files.
+    // if there are groups, this is run in addition to the call_batch_variants
+    // subworkflow
+    if(params.call_individual_variants){
+        CALL_INDIVIDUAL_VARIANTS (
+            ALIGN.out.bam_bai,
+            ch_dusted_bed,
+            fasta,
+            PREPARE_GENOME.out.fai,
+            ch_intervals_combined
+        )
+        // combine individual VCF and batch VCF into single channel
+        annotate_variants_input = annotate_variants_input
+                                    .mix(CALL_INDIVIDUAL_VARIANTS.out.freebayes_vcf)
+        ch_versions = ch_versions.mix(CALL_INDIVIDUAL_VARIANTS.out.versions.first())
+    }
+
+    CALL_STRUCTURAL_VARIANTS (
         ALIGN.out.bam_bai,
+        ch_dusted_bed,
         fasta,
-        INDEX_GENOME.out.fai,
-        ch_intervals_combined
+        PREPARE_GENOME.out.bwa_index
     )
-    ch_versions = ch_versions.mix(CALL_INDIVIDUAL_VARIANTS.out.versions.first())
+    annotate_variants_input = annotate_variants_input.mix(CALL_STRUCTURAL_VARIANTS.out.vcf)
+    ch_versions = ch_versions.mix(CALL_STRUCTURAL_VARIANTS.out.versions)
 
-    annotate_variants_input = annotate_variants_input.mix(CALL_INDIVIDUAL_VARIANTS.out.freebayes_vcf)
-
-    ALIGN.out.bam_bai.map{meta, bam, bai ->
-        return [meta.group, meta.aligner, bam, bai]}
-        .groupTuple(by: [0,1])
-        .map{group, aligner, bam_list, bai_list ->
-            def meta_tmp = ["id":"group_"+group, "aligner":aligner]
-            if(bam_list.size() > 1){
-               return [meta_tmp,bam_list,bai_list]
+    if(params.call_batch_variants){
+        // group the bams by the group key in the metadata map. The grouping is
+        // input by the user in the samplesheet.
+        // input:  [[id: id1, group: 1, ...], bam, bai],
+        //         [[id: id2, group: 2, ...], bam2, bai2],
+        //         [[id: id3, group: 2, ...], bam3, bai3]
+        //         this is combined with the interval channel (by default, queue of bed files by chromosome)
+        // output: [[id: group_1, aligner: bwamem2, interval: chr1_1-end, ...], [bam1], [bai1], chr1_bed]
+        //         [[id: group_1, aligner: bwamem2, interval: chr2_1-end, ...], [bam1], [bai1], chr2_bed]
+        //         ...
+        //         [[id: group_2, aligner: bwamem2, interval: chr1_1-end, ...], [bam2], [bai1], chr1_bed]
+        //         [[id: group_2, aligner: bwamem2, interval: chr2_1-end, ...], [bam2], [bai1], chr2_bed]
+        //         ...
+        ALIGN.out.bam_bai.map{meta, bam, bai ->
+            return [meta.group, meta.aligner, bam, bai]}
+            .groupTuple(by: [0,1])
+            .map{group, aligner, bam_list, bai_list ->
+                def meta_tmp = ["id":"group_"+group, "aligner":aligner]
+                if(bam_list.size() > 1){
+                return [meta_tmp,bam_list,bai_list]
+                }
             }
-        }
-        .combine(ch_intervals_combined)
-        .set{ call_batch_variants_input }
+            // extract only the interval bed, not the number of intervals
+            .combine(ch_intervals.map{it -> it[0]})
+            .map{ meta,bam_list,bai_list,interval ->
+                    return [add_interval_to_meta(meta, interval),
+                            bam_list, bai_list, interval ]}
+            .set{ call_batch_variants_input }
 
-    CALL_BATCH_VARIANTS (
-        call_batch_variants_input,
-        fasta,
-        INDEX_GENOME.out.fai
-    )
-    ch_versions = ch_versions.mix(CALL_BATCH_VARIANTS.out.versions.first())
+        //Run variant calling on the batched alignment files
+        CALL_BATCH_VARIANTS (
+            call_batch_variants_input,
+            ch_dusted_bed,
+            fasta,
+            PREPARE_GENOME.out.fai,
+            PREPARE_GENOME.out.sequence_dict
+        )
 
-    annotate_variants_input = annotate_variants_input.mix(CALL_BATCH_VARIANTS.out.freebayes_vcf)
+        // combine individual VCF and batch VCF into single channel
+        annotate_variants_input = annotate_variants_input
+                                    .mix(CALL_BATCH_VARIANTS.out.freebayes_vcf)
+        ch_versions = ch_versions.mix(CALL_BATCH_VARIANTS.out.versions.first())
+    }
 
+
+    // annotate the VCF files
     ANNOTATE (
         annotate_variants_input,
         fasta
@@ -172,16 +222,9 @@ workflow MBLABCALLVARIANTS {
     ch_reports  = ch_reports.mix(ANNOTATE.out.reports)
     ch_versions = ch_versions.mix(ANNOTATE.out.versions.first())
 
-    // if(params.bsa2){
-    //     BSA2 (
-    //         ANNOTATE.out.freebayes.collect()
-    //     )
-    //     ch_versions = ch_versions.mix(BSA2.out.versions.first())
-    // }
-
-    // CUSTOM_DUMPSOFTWAREVERSIONS (
-    //     ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    // )
+    CUSTOM_DUMPSOFTWAREVERSIONS (
+        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    )
 
     // //
     // // MODULE: MultiQC
@@ -226,3 +269,28 @@ workflow.onComplete {
     THE END
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FUNCTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+// create a meta map for a item in the split fasta channel
+// input: a fasta file path that originates from the splitFasta function
+//        for example /path/to/...workdir.../fastafilename.1.fasta.gz
+//        note that .1.fasta.gz represents the order in which this record was
+//        split -- if the chromosomes are in order, then this is chr1.
+// output: a meta map in the format [id: contig_<index>], eg [id: contig_1] for the
+//         example above
+def add_interval_to_meta(Map meta, bed) {
+
+    def new_meta = [:]
+
+    meta.each{ k,v ->
+        new_meta[k] = v}
+
+    new_meta.interval = bed.baseName - "bed"
+
+    return new_meta
+}

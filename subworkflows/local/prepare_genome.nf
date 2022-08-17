@@ -5,13 +5,15 @@
 //
 
 include { SAMTOOLS_FAIDX } from "${projectDir}/modules/nf-core/modules/samtools/faidx/main"
+include { GATK4_CREATESEQUENCEDICTIONARY } from "${projectDir}/modules/nf-core/modules/gatk4/createsequencedictionary/main"
 include { BWAMEM2_INDEX  } from "${projectDir}/modules/nf-core/modules/bwamem2/index/main"
+include { BWA_INDEX      } from "${projectDir}/modules/nf-core/modules/bwa/index/main"
 include { YAHA_INDEX     } from "${projectDir}/modules/local/yaha/index/main"
 
-workflow INDEX_GENOME {
+workflow PREPARE_GENOME {
     take:
     aligners
-    fasta // [val(meta), path(fasta)]
+    fasta // path(fasta)
 
     main:
 
@@ -57,12 +59,20 @@ workflow INDEX_GENOME {
         ch_yaha_nib2  = Channel.empty()
     }
 
+    // for TIDIT SV
+    BWA_INDEX(fasta)
+    ch_versions = ch_versions.mix(BWA_INDEX.out.versions)
+
+    GATK4_CREATESEQUENCEDICTIONARY( fasta )
+    ch_versions   = ch_versions.mix(GATK4_CREATESEQUENCEDICTIONARY.out.versions)
+
+
     emit:
-    fai           = ch_fai     // channel: [val(meta), path(fai)]
-    bwamem2_index = ch_bwamem2_index // path(bwamem2 directory)
-    yaha_index    = ch_yaha_index    // channel: [ val(meta), path(yaha index file -- the one with extension .X...)]
-    yaha_nib2     = ch_yaha_nib2     // channel: [ val(meta), path(yaha genome .nib2 file) ]
-    versions      = ch_versions      // channel: [ versions.yml ]
+    fai             = ch_fai             // channel: [val(meta), path(fai)]
+    bwamem2_index   = ch_bwamem2_index   // path(bwamem2 directory)
+    bwa_index       = BWA_INDEX.out.index
+    sequence_dict   = GATK4_CREATESEQUENCEDICTIONARY.out.dict
+    yaha_index      = ch_yaha_index      // channel: [ val(meta), path(yaha index file -- the one with extension .X...)]
+    yaha_nib2       = ch_yaha_nib2       // channel: [ val(meta), path(yaha genome .nib2 file) ]
+    versions        = ch_versions        // channel: [ versions.yml ]
 }
-
-

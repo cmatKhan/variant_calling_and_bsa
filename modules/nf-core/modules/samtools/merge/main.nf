@@ -26,7 +26,6 @@ process SAMTOOLS_MERGE {
     def file_type = input_files[0].getExtension()
     def reference = fasta ? "--reference ${fasta}" : ""
 
-    println input_files
     """
     samtools \\
         merge \\

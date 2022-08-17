@@ -1,103 +1,58 @@
-# ![nf-core/mblabcallvariants](docs/images/nf-core-mblabcallvariants_logo_light.png#gh-light-mode-only) ![nf-core/mblabcallvariants](docs/images/nf-core-mblabcallvariants_logo_dark.png#gh-dark-mode-only)
-
-[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8)](https://doi.org/10.5281/zenodo.XXXXXXX)
-
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.10.3-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg)](https://sylabs.io/docs/)
 
-[![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23mblabcallvariants-4A154B?logo=slack)](https://brentlab.slack.com/channels/varient_calling_pipeline)
-
 ## Introduction
 
 This pipeline is meant to align genomic reads and perform variant calling against
-the reference genome. Given a certain formulation of the input samplesheet, it
-will perform the variant calling step (currently using freebayes) individually
-on each of the samples, and then again using a user supplied grouping. Therefore,
-it is appropriate for both checking a genotype, eg that a certain KO was successful,
-and also a BSA experiment.
+the reference genome. It can align any number of samples either separately,
+together, or in user specified batches.
 
-## Installation on HTCF
+## Dependencies
 
-This only needs to be performed one time by one person in a given lab.
+If you are in the Brent lab, Nextflow and Singularity are already installed.
+If you are in a different lab, would like to use this, and don't know how to
+install `git`, `Nextflow >= 20.10.03` and `Singularity`,
+please email chasem@wustl.edu.
 
-On HTCF:
 
-```bash
-# launch an interactive session
-$ interactive
+## Setup
 
-# install java jdk, nextflow, singularity and git via spack
-$ spack install openjdk
+Navigate to your scratch space, create a directory to store pipeline output,
+and clone this repo. This look like so:
 
-$ spack install nextflow
+```
+$ cd /scratch/<lab>/<your_scratch>
 
-$ spack install singularityce
-
-$ spack install git
-
-# change directory into the lab's shared software space. note <lab>
-# is a placeholder -- you need to know what your lab group is on htcf and replace
-# <lab> with that
-$ cd /ref/<lab>/software
-
+# load the git module
 $ eval $(spack load --sh git)
 
-# clone the repository from github into /ref/<lab>/software
+# it doesn't matter what this is called -- call it anything
+$ mkdir variant_calling_pipeline
+
+$ cd variant_calling_pipeline
+
 $ git clone https://github.com/cmatKhan/variant_calling_and_bsa
 
-# change directory back into scratch
-$ cd /scratch/<lab>/<user_scratch>
-
 ```
 
-## Maintenance
-
-Before using the pipeline, you should make sure that you have the most up-to-date
-version. To update, do this on HTCF:
-
-```bash
-# change directory into the source code directory in your lab's shared software
-# space
-$ cd /ref/<lab>/software/variant_calling_and_bsa
-
-# load the spack git module
-$ eval $(spack load --sh git)
-
-# pull any changes from the github repo to your local
-$ git pull
-
-```
 
 ## Test the installation
 
 To test whether the pipeline is appropriately installed, do the following:
 
 ```bash
-# make sure that you're in scratch. Make sure you fill in the <stuff> with
-# the correct information. For instance, if I were to do this to my own
-# scratch directory, I would do this:
-# cd /scratch/mblab/chasem
-$ cd /scratch/<lab>/<your_scratch_directory>
-
-# make a directory to store the input/output of the pipeline. It does not
-# matter what this is called -- only you need to understand
-$ mkdir variant_calling_pipeline
-
-# change directory into the directory you just created. Remember
-# that the name of this directory doesn't matter -- call it whatever
-# you like
-$ cd variant_calling_pipeline
+# make sure you are in the directory where you want the output to go. This is
+# probably the same directory in which you have the repo. Everything that
+# follows assumes this is the case.
+$ cd /scratch/<lab>/<user_scratch>/variant_calling_pipeline
 
 # copy the HTCF run script to your directory
-$ cp /ref/<lab>/software/variant_calling_and_bsa/assets/run_nf_htcf.sh .
+$ cp variant_calling_and_bsa/assets/run_nf_htcf.sh .
 
-# make sure that worked. The result of this command should show that
-# run_nf_htcf.sh is in your current directory.
-$ ls
-
-# launch the test
+# launch the test. Note that this script does assume that the code repo is
+# in the current directory
 $ sbatch run_nf_htcf.sh
 
 ```
@@ -114,6 +69,74 @@ directory called `work`, and the final results are deposited in a directory call
 `results`. Do not delete either of these until you the pipeline has completely
 finished (either due to completion or error. If it is finished, there will be
 no pipeline jobs in your `squeue -u $USER` output related to the pipeline).
+
+## Running your own data
+
+You will need to create a samplesheet. [See instructions here](docs/usage.md).
+Next, move the data from `lts` to `scratch`. I put this into a directory
+called `data` in the same directory that I store the pipeline output in. In the
+instructions above, this directory was called
+`/scratch/<lab>/<user_scratch>/variant_calling_pipeline`.
+
+Create a launch script that is similar to the test script called `run_nf_htcf.sh`.
+It might look like so:
+
+```
+#!/usr/bin/bash
+
+#SBATCH --mem-per-cpu=10G
+#SBATCH -J bsa6.out
+#SBATCH -o bsa6.out
+
+eval $(spack load --sh openjdk)
+# note that the versioning isn't strictly necessary --
+# update this to the newest version. Just don't go older, in general
+eval $(spack load --sh singularityce@3.8.0)
+eval $(spack load --sh nextflow@22.04.5)
+
+tmp=$(mktemp -d /tmp/$USER-singularity-XXXXXX)
+
+mkdir singularity
+mkdir local_tmp
+
+export NXF_SINGULARITY_CACHEDIR=singularity
+export SINGULARITY_TMPDIR=$tmp
+export SINGULARITY_CACHEDIR=$tmp
+
+nextflow run \
+    variant_calling_and_bsa/main.nf \
+    -profile singularity,htcf,batch_only \
+    --input bsa6_samplesheet.csv \
+    --outdir results_bsa6 \
+    --aligners "bwamem2" \
+    --ploidy 2
+    -resume
+```
+
+You could alternatively put the input parameters into a json like so:
+
+```json
+{
+  "fasta": "/ref/mblab/data/KN99/KN99_genome_fungidb.fasta",
+  "input": "bsa6_samplesheet.csv",
+  "outdir": "results_bsa6",
+  "aligners" : "bwamem2",
+  "ploidy": 2
+}
+
+```
+
+and the launch command would look like:
+
+```
+nextflow run \
+    variant_calling_and_bsa/main.nf \
+    -profile singularity,htcf,batch_only \
+    -params-file params.json
+    -resume
+```
+
+
 
 ## Citation
 

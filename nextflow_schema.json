@@ -28,21 +28,27 @@
             "properties": {
                 "ploidy": {
                     "type": "integer",
-                    "default": 1
+                    "description": "for BSA, the profile is set to 1"
                 },
                 "freebayes_min_map_qual": {
                     "type": "integer",
-                    "default": 30
+                    "description": "in the BSA profile, this is set to 5"
                 },
                 "min_alternate_fraction": {
                     "type": "number",
-                    "default": 0.75
+                    "description": "In the BSA profile this is set to .75"
                 },
                 "freebayes_min_coverage": {
                     "type": "integer",
-                    "default": 5
+                    "description": "In the BSA profile, this is set to 30. probably could be decreased to 20 -- in genotype_check it is decreased to 20."
                 }
-            }
+            },
+            "required": [
+                "ploidy",
+                "freebayes_min_map_qual",
+                "min_alternate_fraction",
+                "freebayes_min_coverage"
+            ]
         },
         "input_output_options": {
             "title": "Input/output options",
@@ -54,6 +60,7 @@
                 "outdir",
                 "aligners",
                 "snpeff_config_key",
+                "platform",
                 "snpeff_db_config"
             ],
             "properties": {
@@ -95,13 +102,25 @@
                 "save_intermediate": {
                     "type": "boolean"
                 },
+                "call_individual_variants": {
+                    "type": "boolean"
+                },
+                "call_batch_variants": {
+                    "type": "boolean",
+                    "default": true
+                },
                 "snpeff_config_key": {
                     "type": "string",
-                    "default": "ASM221672v1"
+                    "description": "The Key with which to extract organism informatino from the snpEff_db_config file. For KN99 this is ASM221672v1, for instance"
                 },
                 "snpeff_db_config": {
                     "type": "string",
-                    "default": "/home/oguzkhan/code/mblab_call_variants/assets/snpEff.config"
+                    "default": "${projectDir}/assets/snpEff.config"
+                },
+                "platform": {
+                    "type": "string",
+                    "default": "ILLUMINA",
+                    "description": "Sequencing platform -- this is added to the bam header"
                 }
             }
         },
@@ -168,6 +187,10 @@
                 "save_reference": {
                     "type": "boolean",
                     "default": true
+                },
+                "dusted_bed": {
+                    "type": "string",
+                    "default": "None"
                 }
             }
         },
