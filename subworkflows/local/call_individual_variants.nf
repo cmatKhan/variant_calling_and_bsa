@@ -2,6 +2,11 @@
 // include { MANTA_SOMATIC        } from "${projectDir}/modules/nf-core/modules/manta/somatic/main"
 // include { CONTROLFREEC_SOMATIC          } from "${projectDir}/nf-core/variantcalling/controlfreec/somatic/main"
 include { FREEBAYES as FREEBAYES_INDIVIDUAL } from "${projectDir}/modules/nf-core/modules/freebayes/main"
+include { CNVPYTOR_IMPORTREADDEPTH          } from "${projectDir}/modules/nf-core/modules/cnvpytor/importreaddepth/main"
+include { CNVPYTOR_HISTOGRAM                } from "${projectDir}/modules/nf-core/modules/cnvpytor/histogram/main"
+include { CNVPYTOR_PARTITION                } from "${projectDir}/modules/nf-core/modules/cnvpytor/partition/main"
+include { CNVPYTOR_CALLCNVS                 } from "${projectDir}/modules/nf-core/modules/cnvpytor/callcnvs/main"
+include { CNVPYTOR_VIEW                     } from "${projectDir}/modules/nf-core/modules/cnvpytor/view/main"
 include { VCFTOOLS                          } from "${projectDir}/modules/nf-core/modules/vcftools/main"
 
 workflow CALL_INDIVIDUAL_VARIANTS {
@@ -11,6 +16,8 @@ workflow CALL_INDIVIDUAL_VARIANTS {
     fasta
     fasta_fai  // channel: [val(meta), path(fai)]
     intervals_bed_combined        // channel: [mandatory] intervals/target regions in one file unzipped
+    cnv_histogram_bin_size
+    cnv_output_format
 
     main:
 
@@ -35,8 +42,47 @@ workflow CALL_INDIVIDUAL_VARIANTS {
     )
     ch_versions   = ch_versions.mix(FREEBAYES_INDIVIDUAL.out.versions)
 
+    // create channel to collect vcf files from freebayes and cnvnator
+    FREEBAYES_INDIVIDUAL.out.vcf.set{ ch_vcf }
+
+    CNVPYTOR_IMPORTREADDEPTH(
+        bam_bai,
+        fasta,
+        fasta_fai
+    )
+    ch_versions = ch_versions.mix(CNVPYTOR_IMPORTREADDEPTH.out.versions)
+
+    cnv_histogram_bin_size.map{it -> it[0]}.set{ bin_size }
+
+    CNVPYTOR_HISTOGRAM(
+        CNVPYTOR_IMPORTREADDEPTH.out.pytor,
+        bin_size
+    )
+    ch_versions = ch_versions.mix(CNVPYTOR_HISTOGRAM.out.versions)
+
+    CNVPYTOR_PARTITION(
+        CNVPYTOR_HISTOGRAM.out.pytor,
+        bin_size
+    )
+    ch_versions = ch_versions.mix(CNVPYTOR_PARTITION.out.versions)
+
+    CNVPYTOR_CALLCNVS(
+        CNVPYTOR_PARTITION.out.pytor,
+        bin_size
+    )
+    ch_versions = ch_versions.mix(CNVPYTOR_CALLCNVS.out.versions)
+
+    CNVPYTOR_VIEW(
+        CNVPYTOR_PARTITION.out.pytor,
+        bin_size,
+        cnv_output_format
+    )
+    ch_versions = ch_versions.mix(CNVPYTOR_VIEW.out.versions)
+
+    ch_vcf = ch_vcf.mix(CNVPYTOR_VIEW.out.vcf)
+
     VCFTOOLS(
-        FREEBAYES_INDIVIDUAL.out.vcf,
+        ch_vcf,
         dusted_bed,
         []
     )
