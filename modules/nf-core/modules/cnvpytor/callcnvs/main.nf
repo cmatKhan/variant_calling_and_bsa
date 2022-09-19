@@ -20,9 +20,11 @@ process CNVPYTOR_CALLCNVS {
 
     script:
     def bins = bin_sizes ?: '1000'
+    def args = task.ext.args ?: ''
     """
     cnvpytor \\
         -root $pytor \\
+        $args \\
         -call $bin_sizes
 
     cat <<-END_VERSIONS > versions.yml

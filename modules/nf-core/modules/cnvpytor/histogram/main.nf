@@ -21,9 +21,11 @@ process CNVPYTOR_HISTOGRAM {
 
     script:
     def bins = bin_sizes ?: '1000'
+    def args = task.ext.args ?: ''
     """
     cnvpytor \\
         -root $pytor \\
+        $args \\
         -his $bins
 
     cat <<-END_VERSIONS > versions.yml

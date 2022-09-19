@@ -32,15 +32,30 @@
                 },
                 "freebayes_min_map_qual": {
                     "type": "integer",
-                    "description": "in the BSA profile, this is set to 5"
+                    "description": "in the BSA profile, this is set to 5",
+                    "default": 30
                 },
                 "min_alternate_fraction": {
                     "type": "number",
-                    "description": "In the BSA profile this is set to .75"
+                    "description": "In the BSA profile this is set to .75",
+                    "default": 0.75
+                },
+                "freebayes_min_base_qual": {
+                    "type": "integer",
+                    "default": 20
                 },
                 "freebayes_min_coverage": {
                     "type": "integer",
-                    "description": "In the BSA profile, this is set to 30. probably could be decreased to 20 -- in genotype_check it is decreased to 20."
+                    "description": "In the BSA profile, this is set to 30. probably could be decreased to 20 -- in genotype_check it is decreased to 20.",
+                    "default": 5
+                },
+                "cnv_histogram_bin_size": {
+                    "type": "integer",
+                    "default": 1000
+                },
+                "cnv_output_format": {
+                    "type": "string",
+                    "default": "vcf"
                 }
             },
             "required": [
@@ -60,8 +75,8 @@
                 "outdir",
                 "aligners",
                 "snpeff_config_key",
-                "platform",
-                "snpeff_db_config"
+                "snpeff_db_config",
+                "platform"
             ],
             "properties": {
                 "input": {
@@ -391,15 +406,5 @@
         {
             "$ref": "#/definitions/generic_options"
         }
-    ],
-    "properties": {
-        "cnv_histogram_bin_size": {
-            "type": "integer",
-            "default": 1000
-        },
-        "cnv_output_format": {
-            "type": "string",
-            "default": "vcf"
-        }
-    }
+    ]
 }

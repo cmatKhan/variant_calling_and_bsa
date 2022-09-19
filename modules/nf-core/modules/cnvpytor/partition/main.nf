@@ -20,9 +20,11 @@ process CNVPYTOR_PARTITION {
 
     script:
     def bins = bin_sizes ?: '1000'
+    def args = task.ext.args ?: ''
     """
     cnvpytor \\
         -root $pytor \\
+        $args \\
         -partition $bins
 
     cat <<-END_VERSIONS > versions.yml

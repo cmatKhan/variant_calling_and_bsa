@@ -26,10 +26,12 @@ process CNVPYTOR_VIEW {
     def bins   = bin_sizes ?: '1000'
     def input  = pytor_files.join(" ")
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def genome_config = "${projectDir}/assets/kn99_cnvpytor_genome_conf.py"
     """
 
     python3 <<CODE
     import cnvpytor,os
+    cnvpytor.Genome.load_reference_genomes("${genome_config}")
     binsizes = "${bins}".split(" ")
     for binsize in binsizes:
         file_list = "${input}".split(" ")
