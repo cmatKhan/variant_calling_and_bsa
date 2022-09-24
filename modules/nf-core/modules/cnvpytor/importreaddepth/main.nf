@@ -28,7 +28,7 @@ process CNVPYTOR_IMPORTREADDEPTH {
     """
     cnvpytor \\
         -root ${prefix}.pytor \\
-        ${config_arg} \\
+        ${conf_arg} \\
         -rd $input_file \\
         $args \\
         $reference
