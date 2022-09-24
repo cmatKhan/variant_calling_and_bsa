@@ -49,6 +49,14 @@
                     "description": "In the BSA profile, this is set to 30. probably could be decreased to 20 -- in genotype_check it is decreased to 20.",
                     "default": 5
                 },
+                "tiddit_min_supported_split_reads": {
+                    "type": "integer",
+                    "default": 5
+                },
+                "tiddit_min_supporting_pairs": {
+                    "type": "integer",
+                    "default": 5
+                },
                 "cnv_histogram_bin_size": {
                     "type": "integer",
                     "default": 1000
