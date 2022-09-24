@@ -12,6 +12,7 @@ process CNVPYTOR_VIEW {
     val bin_sizes
     val output_format
     path config_file
+    path gc_content
 
     output:
     tuple val(meta), path("*.vcf"), emit: vcf      , optional: true

@@ -77,6 +77,10 @@ cnvpytor_genome_conf_ch = params.cnvpytor_conf_file ?
                           Channel.fromPath(params.cnvpytor_conf_file).collect():
                           Channel.empty()
 
+cnvpytor_genome_gc_ch = params.cnvpytor_conf_gc_file ?
+                          Channel.fromPath(params.cnvpytor_conf_gc_file).collect():
+                          Channel.empty()
+
 cnv_histogram_bin_size = Channel.from(params.cnv_histogram_bin_size).collect()
 cnv_output_format      = Channel.from(params.cnv_output_format).collect()
 
@@ -161,6 +165,7 @@ workflow MBLABCALLVARIANTS {
             PREPARE_GENOME.out.fai,
             ch_intervals_combined,
             cnvpytor_genome_conf_ch,
+            cnvpytor_genome_gc_ch,
             cnv_histogram_bin_size,
             cnv_output_format
         )

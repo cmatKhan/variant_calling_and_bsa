@@ -12,6 +12,7 @@ process CNVPYTOR_IMPORTREADDEPTH {
     path fasta
     path fai
     path config_file
+    path gc_content
 
     output:
     tuple val(meta), path("*.pytor")	, emit: pytor

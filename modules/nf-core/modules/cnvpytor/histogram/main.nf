@@ -11,6 +11,7 @@ process CNVPYTOR_HISTOGRAM {
     tuple val(meta), path(pytor)
     val bin_sizes
     path config_file
+    path gc_content
 
     output:
     tuple val(meta), path("${pytor.baseName}.pytor")	, emit: pytor
