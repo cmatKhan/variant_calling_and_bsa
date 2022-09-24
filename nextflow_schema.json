@@ -57,6 +57,18 @@
                     "type": "integer",
                     "default": 5
                 },
+                "tiddit_min_p_ratio": {
+                    "type": "number",
+                    "default": 0.5
+                },
+                "tiddit_min_r_ratio": {
+                    "type": "number",
+                    "default": 0.5
+                },
+                "cnvpytor_conf_file": {
+                    "type": "string",
+                    "default": "/home/oguzkhan/code/mblab_call_variants/assets/kn99_cnvpytor_genome_conf.py"
+                },
                 "cnv_histogram_bin_size": {
                     "type": "integer",
                     "default": 1000
