@@ -16,6 +16,7 @@ workflow CALL_INDIVIDUAL_VARIANTS {
     fasta
     fasta_fai  // channel: [val(meta), path(fai)]
     intervals_bed_combined        // channel: [mandatory] intervals/target regions in one file unzipped
+    cnvpytor_genome_conf
     cnv_histogram_bin_size
     cnv_output_format
 
@@ -48,7 +49,8 @@ workflow CALL_INDIVIDUAL_VARIANTS {
     CNVPYTOR_IMPORTREADDEPTH(
         bam_bai,
         fasta,
-        fasta_fai
+        fasta_fai,
+        cnvpytor_genome_conf
     )
     ch_versions = ch_versions.mix(CNVPYTOR_IMPORTREADDEPTH.out.versions)
 
@@ -56,26 +58,30 @@ workflow CALL_INDIVIDUAL_VARIANTS {
 
     CNVPYTOR_HISTOGRAM(
         CNVPYTOR_IMPORTREADDEPTH.out.pytor,
-        bin_size
+        bin_size,
+        cnvpytor_genome_conf
     )
     ch_versions = ch_versions.mix(CNVPYTOR_HISTOGRAM.out.versions)
 
     CNVPYTOR_PARTITION(
         CNVPYTOR_HISTOGRAM.out.pytor,
-        bin_size
+        bin_size,
+        cnvpytor_genome_conf
     )
     ch_versions = ch_versions.mix(CNVPYTOR_PARTITION.out.versions)
 
     CNVPYTOR_CALLCNVS(
         CNVPYTOR_PARTITION.out.pytor,
-        bin_size
+        bin_size,
+        cnvpytor_genome_conf
     )
     ch_versions = ch_versions.mix(CNVPYTOR_CALLCNVS.out.versions)
 
     CNVPYTOR_VIEW(
         CNVPYTOR_PARTITION.out.pytor,
         bin_size,
-        cnv_output_format
+        cnv_output_format,
+        cnvpytor_genome_conf
     )
     ch_versions = ch_versions.mix(CNVPYTOR_VIEW.out.versions)
 

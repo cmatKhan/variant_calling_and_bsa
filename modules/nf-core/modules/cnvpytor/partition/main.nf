@@ -10,6 +10,7 @@ process CNVPYTOR_PARTITION {
     input:
     tuple val(meta), path(pytor)
     val bin_sizes
+    path config_file
 
     output:
     tuple val(meta), path("${pytor.baseName}.pytor"), emit: pytor
@@ -21,9 +22,11 @@ process CNVPYTOR_PARTITION {
     script:
     def bins = bin_sizes ?: '1000'
     def args = task.ext.args ?: ''
+    def conf_arg = config_file ? "-conf ${config_file}" : ''
     """
     cnvpytor \\
         -root $pytor \\
+        ${conf_arg} \\
         $args \\
         -partition $bins
 

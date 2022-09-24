@@ -11,6 +11,7 @@ process CNVPYTOR_IMPORTREADDEPTH {
     tuple val(meta), path(input_file), path(index)
     path fasta
     path fai
+    path config_file
 
     output:
     tuple val(meta), path("*.pytor")	, emit: pytor
@@ -22,10 +23,12 @@ process CNVPYTOR_IMPORTREADDEPTH {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def reference = fasta ? "-T ${fasta}" : ''
+    def reference = fasta ? "-T ${fasta}" : '' 
+    def conf_arg = config_file ? "-conf ${config_file}" : ''
     """
     cnvpytor \\
         -root ${prefix}.pytor \\
+        ${config_arg} \\
         -rd $input_file \\
         $args \\
         $reference

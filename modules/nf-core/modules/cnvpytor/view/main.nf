@@ -11,6 +11,7 @@ process CNVPYTOR_VIEW {
     tuple val(meta), path(pytor_files)
     val bin_sizes
     val output_format
+    path config_file
 
     output:
     tuple val(meta), path("*.vcf"), emit: vcf      , optional: true
@@ -26,12 +27,12 @@ process CNVPYTOR_VIEW {
     def bins   = bin_sizes ?: '1000'
     def input  = pytor_files.join(" ")
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def genome_config = "${projectDir}/assets/kn99_cnvpytor_genome_conf.py"
+    def conf_arg = config_file ? "cnvpytor.Genome.load_reference_genomes('${config_file}')" : ''
     """
 
     python3 <<CODE
     import cnvpytor,os
-    cnvpytor.Genome.load_reference_genomes("${genome_config}")
+    ${conf_arg}
     binsizes = "${bins}".split(" ")
     for binsize in binsizes:
         file_list = "${input}".split(" ")
