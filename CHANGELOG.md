@@ -3,6 +3,15 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.1.2 - [20220925]
+
+### `Fixed`
+
+CNVpytor is now producing tsv output. The module scripts, in particular view,
+have been heavily modified from the nf-core versions. Only `tsv` and the pytor
+file are produced as output the `tsv` format is hard coded, so the current
+output format param for cnvpytor isn't doing anything.
+
 ## v1.1.1 - [20220918]
 ### `Added`
 `freebayes_min_base_qual` to the config. Set defaults on mapq, base_qual and
