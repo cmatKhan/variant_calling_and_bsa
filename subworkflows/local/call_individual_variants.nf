@@ -83,7 +83,7 @@ workflow CALL_INDIVIDUAL_VARIANTS {
     CNVPYTOR_VIEW(
         CNVPYTOR_PARTITION.out.pytor,
         bin_size,
-        cnv_output_format.map(it -> it[0]),
+        cnv_output_format,
         cnvpytor_genome_conf,
         cnvpytor_genome_gc_ch
     )

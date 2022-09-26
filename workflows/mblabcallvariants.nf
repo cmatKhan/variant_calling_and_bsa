@@ -82,7 +82,7 @@ cnvpytor_genome_gc_ch = params.cnvpytor_conf_gc_file ?
                           Channel.empty()
 
 cnv_histogram_bin_size = Channel.from(params.cnv_histogram_bin_size).collect()
-cnv_output_format      = Channel.from(params.cnv_output_format).collect()
+cnv_output_format      = Channel.value(params.cnv_output_format)
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

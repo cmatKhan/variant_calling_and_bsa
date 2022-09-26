@@ -37,7 +37,7 @@ process CNVPYTOR_VIEW {
     -root ${pytor} \\
     -view ${bin_size} \\
     <<ENDL 
-    set print_filename ${prefix}.tsv
+    set print_filename ${prefix}.${output_suffix}
     print calls
     ENDL
 
