@@ -49,8 +49,6 @@ workflow CALL_INDIVIDUAL_VARIANTS {
 
     CNVPYTOR_IMPORTREADDEPTH(
         bam_bai,
-        fasta,
-        fasta_fai,
         cnvpytor_genome_conf,
         cnvpytor_genome_gc_ch
     )
@@ -85,7 +83,7 @@ workflow CALL_INDIVIDUAL_VARIANTS {
     CNVPYTOR_VIEW(
         CNVPYTOR_PARTITION.out.pytor,
         bin_size,
-        cnv_output_format,
+        cnv_output_format.map(it -> it[0]),
         cnvpytor_genome_conf,
         cnvpytor_genome_gc_ch
     )

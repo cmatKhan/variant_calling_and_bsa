@@ -9,8 +9,6 @@ process CNVPYTOR_IMPORTREADDEPTH {
 
     input:
     tuple val(meta), path(input_file), path(index)
-    path fasta
-    path fai
     path config_file
     path gc_content
 
@@ -24,15 +22,13 @@ process CNVPYTOR_IMPORTREADDEPTH {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def reference = fasta ? "-T ${fasta}" : '' 
     def conf_arg = config_file ? "-conf ${config_file}" : ''
     """
     cnvpytor \\
-        -root ${prefix}.pytor \\
         ${conf_arg} \\
+        -root ${prefix}.pytor \\
         -rd $input_file \\
-        $args \\
-        $reference
+        $args 
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

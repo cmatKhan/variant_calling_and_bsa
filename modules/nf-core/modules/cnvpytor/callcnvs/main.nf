@@ -26,8 +26,8 @@ process CNVPYTOR_CALLCNVS {
     def conf_arg = config_file ? "-conf ${config_file}" : ''
     """
     cnvpytor \\
-        -root $pytor \\
         ${conf_arg} \\
+        -root $pytor \\
         $args \\
         -call $bin_sizes
 
