@@ -163,6 +163,7 @@ workflow MBLABCALLVARIANTS {
             ch_dusted_bed,
             fasta,
             PREPARE_GENOME.out.fai,
+            PREPARE_GENOME.out.sequence_dict,
             ch_intervals_combined,
             cnvpytor_genome_conf_ch,
             cnvpytor_genome_gc_ch,

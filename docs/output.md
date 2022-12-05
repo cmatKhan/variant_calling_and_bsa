@@ -1,6 +1,12 @@
-# nf-core/mblabcallvariants: Output
+# mblabcallvariants: Output
 
 ## Introduction
+
+[paper on structural variant calling](https://www.nature.com/articles/s41431-021-00983-x)
+ - suggests intersecting results of 4 SV algorithms -- two read depth, two read pairs -- at two levels, the first
+ being of similar algorith, the second with the intersected calls.
+[another paper on structural variant calling](https://www.cell.com/ajhg/fulltext/S0002-9297(17)30496-2)
+ - finds CNVnator and ERDS best
 
 This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
 

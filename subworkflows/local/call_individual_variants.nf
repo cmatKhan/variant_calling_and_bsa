@@ -7,6 +7,8 @@ include { CNVPYTOR_HISTOGRAM                } from "${projectDir}/modules/nf-cor
 include { CNVPYTOR_PARTITION                } from "${projectDir}/modules/nf-core/modules/cnvpytor/partition/main"
 include { CNVPYTOR_CALLCNVS                 } from "${projectDir}/modules/nf-core/modules/cnvpytor/callcnvs/main"
 include { CNVPYTOR_VIEW                     } from "${projectDir}/modules/nf-core/modules/cnvpytor/view/main"
+include { CNVPYTOR_VIEW as CNVPYTOR_VIEW_TSV } from "${projectDir}/modules/nf-core/modules/cnvpytor/view/main"
+include { GATK4_UPDATEVCFSEQUENCEDICTIONARY } from "${projectDir}/modules/local/updatevcfsequencedictionary/main"
 include { VCFTOOLS                          } from "${projectDir}/modules/nf-core/modules/vcftools/main"
 
 workflow CALL_INDIVIDUAL_VARIANTS {
@@ -15,6 +17,7 @@ workflow CALL_INDIVIDUAL_VARIANTS {
     dusted_bed
     fasta
     fasta_fai  // channel: [val(meta), path(fai)]
+    sequence_dict
     intervals_bed_combined        // channel: [mandatory] intervals/target regions in one file unzipped
     cnvpytor_genome_conf
     cnvpytor_genome_gc_ch
@@ -89,7 +92,22 @@ workflow CALL_INDIVIDUAL_VARIANTS {
     )
     ch_versions = ch_versions.mix(CNVPYTOR_VIEW.out.versions)
 
-    ch_vcf = ch_vcf.mix(CNVPYTOR_VIEW.out.vcf)
+    CNVPYTOR_VIEW_TSV(
+        CNVPYTOR_PARTITION.out.pytor,
+        bin_size,
+        'tsv',
+        cnvpytor_genome_conf,
+        cnvpytor_genome_gc_ch
+    )
+
+    // NOTE: CAN'T ACTUALLY FILTER THE CNVPYTOR vcf files b/c they are
+    // malformed
+    // GATK4_UPDATEVCFSEQUENCEDICTIONARY(
+    //     CNVPYTOR_VIEW.out.vcf,
+    //     sequence_dict
+    // )
+
+    // ch_vcf = ch_vcf.mix(CNVPYTOR_VIEW.out.vcf)
 
     VCFTOOLS(
         ch_vcf,
