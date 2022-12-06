@@ -38,6 +38,7 @@ process SNPEFF {
         -c ${config_file} \\
         $args \\
         -csvStats ${prefix}.csv \\
+        -stats ${prefix}.html \\
         $vcf \\
         > ${prefix}.ann.vcf
 
