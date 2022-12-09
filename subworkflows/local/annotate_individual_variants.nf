@@ -13,6 +13,7 @@ workflow ANNOTATE{
 
     main:
     ch_versions = Channel.empty()
+    ch_report = Channel.empty()
     snpeff_config = Channel.fromPath(params.snpeff_db_config).collect()
     snpeff_db = Channel.fromPath("${projectDir}/assets/snpeff_db").collect()
 
@@ -25,8 +26,10 @@ workflow ANNOTATE{
     ch_versions = ch_versions.mix(SNPEFF.out.versions.first())
     ch_versions = ch_versions.mix(TABIX_BGZIPTABIX.out.versions.first())
 
+    ch_report = ch_report.mix(SNPEFF.out.report)
+
     emit:
     vcf_tbi  = TABIX_BGZIPTABIX.out.gz_tbi // channel: [ val(meta), vcf.gz, vcf.gz.tbi ]
-    reports  = SNPEFF.out.report           //    path: *.csv
+    reports  = ch_report                   //    path: *.csv
     versions = ch_versions                 //    path: versions.yml
 }

@@ -78,10 +78,10 @@ workflow ALIGN {
     )
 
     // Gather QC reports
-    ch_reports  = ch_reports.mix(SAMTOOLS_SORT_INDEX_STATS.out.mark_dups_report)
-    ch_reports  = ch_reports.mix(SAMTOOLS_SORT_INDEX_STATS.out.stats)
-    ch_reports  = ch_reports.mix(SAMTOOLS_SORT_INDEX_STATS.out.flagstat)
-    ch_reports  = ch_reports.mix(SAMTOOLS_SORT_INDEX_STATS.out.idxstats)
+    ch_reports  = ch_reports.mix(SAMTOOLS_SORT_INDEX_STATS.out.mark_dups_report.collect{it[1]}.ifEmpty([]))
+    ch_reports  = ch_reports.mix(SAMTOOLS_SORT_INDEX_STATS.out.stats.collect{it[1]}.ifEmpty([]))
+    ch_reports  = ch_reports.mix(SAMTOOLS_SORT_INDEX_STATS.out.flagstat.collect{it[1]}.ifEmpty([]))
+    ch_reports  = ch_reports.mix(SAMTOOLS_SORT_INDEX_STATS.out.idxstats.collect{it[1]}.ifEmpty([]))
     // Gather used softwares versions
     ch_versions = ch_versions.mix(SAMTOOLS_SORT_INDEX_STATS.out.versions)
 
